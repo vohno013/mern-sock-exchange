@@ -40,4 +40,3 @@ jobs:
       - name: Update Lambda function
         run: |
           aws lambda update-function-code --function-name resize --s3-bucket the-sock-exchange --s3-key resize.zip
-
