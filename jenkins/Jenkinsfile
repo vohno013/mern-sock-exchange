@@ -22,7 +22,7 @@ agent any
 
         stage('Deploy') {
             steps {
-                bat "xcopy client\\* '${env.NGINX_HTML_DIR}' /s /y"
+                bat "xcopy client\\* \"${env.NGINX_HTML_DIR}\" /s /y"
             }
         }
     }
