@@ -2,7 +2,7 @@ pipeline {
 agent any
 
     environment {
-        PATH = "C:\\Program Files\\nginx-1.25.4\\html\\"
+        NGINX_HTML_DIR = "C:\\Program Files\\nginx-1.25.4\\html\\"
     }
 
     stages {
@@ -22,7 +22,7 @@ agent any
 
         stage('Deploy') {
             steps {
-                bat "xcopy client\\* ${env.PATH} /s /y"
+                bat "xcopy client\\* ${env.NGINX_HTML_DIR} /s /y"
             }
         }
     }
