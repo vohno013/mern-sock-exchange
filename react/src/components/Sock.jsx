@@ -2,7 +2,7 @@ import React from 'react';
 
 const Sock = (prop) => {
     return (
-        <div className="card">
+        <div className="card" style={{ flex: '1', minWidth: '300px', maxWidth: '45%' }}>
             <div className="card-body">
                 <h5 className="card-title">Sock Details</h5>
                 <div className="card-text">Size: {prop.data.sockDetails.size}</div>
@@ -18,8 +18,9 @@ const Sock = (prop) => {
                 <div className="card-text">Padded: {prop.data.additionalFeatures.padded ? "Yes" : "No"}</div>
                 <div className="card-text">Anti Bacterial: {prop.data.additionalFeatures.antiBacterial ? "Yes" : "No"}</div>
             </div>
-            <div className="card-footer" >
+            <div className="card-footer" style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <small className="text-muted">Added: {prop.data.addedTimestamp}</small>
+                <button className="btn btn-sm btn-danger" onClick={() => prop.handleDelete(prop.data._id)}>Delete</button>
             </div>
         </div>
     );

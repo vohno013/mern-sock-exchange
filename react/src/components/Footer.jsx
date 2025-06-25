@@ -2,8 +2,8 @@ import React from "react";
 
 const Footer = (prop) => {
     return (
-        <footer className="text-muted">
-            <div><strong>{prop.environment}</strong></div>
+        <footer className={prop.environment === "development" ? "bg-yellow" : prop.environment === "production" ? "bg-green" : ""}>
+            <div><strong><b>{prop.environment.toUpperCase()}</b></strong></div>
         </footer>
     );
 };
