@@ -1,106 +1,105 @@
 import express from 'express';
 import { promises as fs } from 'fs';
+import { MongoClient, ObjectId } from 'mongodb';
+import dotenv from 'dotenv';
+import cors from 'cors';
+
+dotenv.config();
+const url = process.env.MONGO_DB_URL;
+const dbName = process.env.MONGO_DB;
+const collectionName = process.env.MONGO_DB_COLLECTION;
 
 const app = express();
+app.use(cors());
 const PORT = 3000;
 
 // Endpoint to read and send JSON file content
 app.get('/socks', async (req, res) => {
     try {
-        // Console log the entire request object
-        console.log(req);
-
-        // Console log specific parts of the request
-        console.log("Headers:", req.headers);
-        console.log("URL:", req.url);
-        console.log("Method:", req.method);
-        console.log("Query parameters:", req.query);
-
-        const data = await fs.readFile('../data/socks.json', 'utf8');
-        const jsonObj = JSON.parse(data);
-        res.json(jsonObj);
+        const client = await MongoClient.connect(url);
+        const db = client.db(dbName);
+        const collection = db.collection(collectionName);
+        const socks = await collection.find({}).toArray();
+        res.json(socks);
     } catch (err) {
         console.error("Error:", err);
         res.status(500).send("Hmmm, something smells... No socks for you! ☹");
     }
 });
 
-app.get('/socks/:color', async (req, res) => {
-    try {
-        // Console log the entire request object
-        console.log(req);
 
-        // Console log specific parts of the request
-        console.log("Headers:", req.headers);
-        console.log("URL:", req.url);
-        console.log("Method:", req.method);
-        console.log("Query parameters:", req.query);
-        console.log("Request parameters:", req.params);
-
-        const {color} = req.params
-        console.log("Color:", color);
-
-        const data = await fs.readFile('../data/socks.json', 'utf8');
-        const jsonObj = JSON.parse(data);
-        const filteredJson = jsonObj.filter(sock => sock.color.toUpperCase() === color.toUpperCase());
-        console.log("Filtered json:", filteredJson)
-        res.json(filteredJson);
-    } catch (err) {
-        console.error("Error:", err);
-        res.status(500).send("Hmmm, something smells... No socks for you! ☹");
-    }
-});
 
 // Middleware to parse JSON bodies
 app.use(express.json());
 
-app.post('/socks', async (req, res) => {
-    try {
-        // Obligatory reference to POST Malone
-        console.log("If POST Malone were a sock, he'd be the one with the most colorful pattern.");
-        // Simulate creating a user
-        const { username, email } = req.body;
-        if (!username || !email) {
-            // Bad request if username or email is missing
-            return res.status(400).send({ error: 'Username and email are required.' });
-        }
 
-        // Respond with the created user information and a 201 Created status
-        res.status(201).send({
-            status: 'success',
-            location: 'http://localhost:3000/users/1234', // This URL should point to the newly created user
-            message: 'User created successfully.'
-        });
+app.post('/socks/search', async (req, res) => {
+    try {
+        // TODO: Add code that can search MongoDB based on a color value
+        // from the Search text box.
+        const { searchTerm } = req.body;
+        const client = await MongoClient.connect(url);
+        const db = client.db(dbName);
+        const collection = db.collection(collectionName);
+        const regex = new RegExp(searchTerm, 'i')
+        const socks = await collection.find({"sockDetails.color": regex}).toArray()
+        res.json(socks);
     } catch (err) {
-        console.error("Error:", err);
-        res.status(500).send("Hmmm, something smells... No socks for you! ☹");
+        console.error('Error:', err);
+        res.status(500).send('Hmm, something doesn\'t smell right... Error searching for socks');
     }
 });
 
 app.delete('/socks/:id', async (req, res) => {
     try {
+        // TODO: Add code that delete a sock when its delete button is clicked.
+        const client = await MongoClient.connect(url);
+        const db = client.db(dbName);
+        const collection = db.collection(collectionName);
         const { id } = req.params;
-        console.log('Deleting sock with ID:', id);
-        res.status(200).send('Sock deleted successfully');
-    } catch (err) {
-        console.error('Error:', err);
-        res.status(500).send("Hmmm, something smells... No socks for you! ☹");
-    }
-});
-
-app.put('/user/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { email } = req.body;
-        console.log('Updating email for user with ID:', id);
-        res.status(200).send({
-            status: 'success',
-            data: email, // This URL should point to the newly created user
-            message: 'User updated successfully.'
-        });
+        const result = await collection.deleteOne({"_id": new ObjectId(id)});
+        console.log("id:", id);
+        console.log("results:", result);
+        if (result.deletedCount === 1) {
+            res.status(200).send('Sock deleted successfully');
+        } else {
+            res.status(404).send('Sock not found');
+        }
+        
     } catch (err) {
         console.error('Error:', err);
         res.status(500).send('Hmm, something doesn\'t smell right... Error deleting sock');
+    }
+});
+
+app.post('/socks', async (req, res) => {
+    try {
+        // TODO: Add code that adds a sock when a new sock is posted using the
+        // Add Sock form.
+        const sock = req.body;
+        const client = await MongoClient.connect(url);
+        const db = client.db(dbName);
+        const collection = db.collection(collectionName);
+        const result = await collection.insertOne(sock);
+        res.status(201).send(`{"_id":"${result.insertedId}"}`);
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).send('Hmm, something doesn\'t smell right... Error adding sock');
+    }
+});
+
+app.get('/socks/:page/:limit', async (req, res) => {
+    try {
+        let { page, limit } = req.params;
+        limit = +limit; // The + converts limit from a string to integer.
+        const client = await MongoClient.connect(url);
+        const db = client.db(dbName);
+        const collection = db.collection(collectionName);
+        const socks = await collection.find({}).skip((page - 1) * limit).limit(limit).toArray();
+        res.json(socks);
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).send('Hmm, something doesn\'t smell right... Error fetching socks');
     }
 });
 
